@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "nodedemouser",
+    "password": "demo",
+    "database": "nodedemodb",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "nodedemouser",
+    "password": "demo",
+    "database": "nodedemodb",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "nodedemouser",
+    "password": "demo",
+    "database": "nodedemodb",
+    "host": "localhost",
+    "dialect": "postgres"
+  }
+}
