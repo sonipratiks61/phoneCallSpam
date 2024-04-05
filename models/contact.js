@@ -9,8 +9,8 @@ module.exports = (sequelize) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
-      // Assuming your User model is defined as 'User'
+     
+     
       models.Contact.hasMany(models.SpamReport, { foreignKey: 'id', as: 'spamReport' }); 
       Contact.belongsTo(models.User, {
         foreignKey: 'userId',
@@ -45,7 +45,7 @@ module.exports = (sequelize) => {
     },
     email: {
       type: DataTypes.STRING,
-      allowNull: true, // Assuming email is optional
+      allowNull: true, 
       validate: {
         isEmail: { msg: "Must be a valid email address" },
       },

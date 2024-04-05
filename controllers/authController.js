@@ -77,7 +77,7 @@ exports.userLogin = async (req, res) => {
         .status(401)
         .json({ message: "Authentication failed. Wrong password." });
     }
-    const data={name:user.name,email:user.email,phoneNumber:user.phoneNumber}
+    const data={id:user.id,name:user.name,email:user.email,phoneNumber:user.phoneNumber}
     const token = jwt.sign({ id: user.id }, jwtSecret, {
       expiresIn: jwtExpiresIn
     });
