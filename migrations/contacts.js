@@ -12,11 +12,11 @@ module.exports = {
       userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        references: {
-          model: 'users', // Make sure to use the actual table name of your User model
-          key: 'id',
-        },
-        onDelete: 'CASCADE',
+        // references: {
+        //   model: 'users', // Make sure to use the actual table name of your User model
+        //   key: 'id',
+        // },
+        // onDelete: 'CASCADE',
       },
       name: {
         type: Sequelize.STRING,
