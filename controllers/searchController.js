@@ -1,14 +1,18 @@
 const { User, Contact, SpamReport } = require('../models');
 const { Op } = require('sequelize');
 
+const {
+    sendBadRequest,
+    sendSuccess,
+    sendNotFound,
+    sendInternalError
+  } = require("../util/customResponse");
 
-const searchController = {
-    // Search by name
-    searchByName: async (req, res) => {
+  
+   exports.searchByName= async (req, res) => {
         const { name } = req.query;
-        console.log(name,"name")
         try {
-            // Search both Users and Contacts for matching names
+           
             const users = await User.findAll({
                 where: { name: { [Op.iLike]: `%${name}%` } },
                 attributes: ['id', 'name', 'phoneNumber'],
@@ -29,40 +33,42 @@ const searchController = {
                 }]
             });
 
-            // Combine and sort results
             const combinedResults = [...users, ...contacts].sort((a, b) => {
-                // Sort by whether name starts with the query, then alphabetically
+             
                 const startsWithNameA = a.name.toLowerCase().startsWith(name.toLowerCase()) ? -1 : 1;
                 const startsWithNameB = b.name.toLowerCase().startsWith(name.toLowerCase()) ? -1 : 1;
                 return startsWithNameA - startsWithNameB || a.name.localeCompare(b.name);
             });
 
-            res.json(combinedResults);
+           return sendSuccess(res,'fetch Successfully',combinedResults)
         } catch (error) {
             console.error('Search by name error:', error);
-            res.status(500).json({ message: 'Failed to search by name.' });
+           return sendInternalError(res, 'Failed to search by name.' );
         }
     },
 
-    // Search by phone number
-    searchByPhoneNumber: async (req, res) => {
+    exports.searchByPhoneNumber = async (req, res) => {
         const { phoneNumber } = req.query;
         try {
-            // Search both Users and Contacts for matching phone numbers
-            const results = await User.findAll({
-                where: { phoneNumber },
+            console.log(phoneNumber, 'phoneNumber');
+    
+            // Search in the User table
+            const userResults = await User.findAll({
+                where: { phoneNumber: phoneNumber },
                 attributes: ['id', 'name', 'phoneNumber'],
                 include: [{
-                  model: SpamReport,
-                  as: 'spamReports', // Ensure that this alias matches the one defined in the association
-                  attributes: ['reportsCount'],
+                    model: SpamReport,
+                    as: 'spamReports',
+                    attributes: ['reportsCount'],
                 }]
-              });
-
-            if (results.length === 0) {
-                // If no registered user is found, search in contacts
+            });
+    
+            console.log(userResults, 'userResults');
+    
+            if (userResults.length === 0) {
+                
                 const contactResults = await Contact.findAll({
-                    where: { phoneNumber },
+                    where: { phoneNumber: phoneNumber },
                     attributes: ['name', 'phoneNumber'],
                     include: [{
                         model: SpamReport,
@@ -70,15 +76,30 @@ const searchController = {
                         attributes: ['reportsCount'],
                     }]
                 });
-                res.json(contactResults);
+    
+                console.log(contactResults);
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'Successfully fetched contacts',
+                    data: contactResults
+                });
             } else {
-                res.json(results);
+                
+                return res.status(200).json({
+                    success: true,
+                    message: 'Successfully fetched results',
+                    data: userResults
+                });
             }
         } catch (error) {
             console.error('Search by phone number error:', error);
-            res.status(500).json({ message: 'Failed to search by phone number.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to search by phone number',
+                error: error.message 
+            });
         }
-    },
-};
+    };
 
-module.exports = searchController;
+

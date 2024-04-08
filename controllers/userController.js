@@ -1,20 +1,25 @@
 const { User, Contact } = require("../models");
 
+const {
+  sendBadRequest,
+  sendSuccess,
+  sendNotFound,
+  sendInternalError
+} = require("../util/customResponse");
 exports.getProfile = async (req, res) => {
   try {
-    const user = req.query;
-    
+    const user = req.userId;
     const userProfile = await User.findOne({ phoneNumber: user.phoneNumber });
-    
     if (!userProfile) {
-      return res.status(404).json({ message: "User profile not found" });
+      return sendNotFound(res, "User not found");
     }
-    userProfile.password = undefined;
-  
-    return res.status(200).json(userProfile);
+    return sendSuccess(
+      res,
+      "User profile successfully retrieved.",
+      userProfile
+    );
   } catch (error) {
-    console.error("Error fetching user profile:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendInternalError(res, "Internal server error");
   }
 };
 
@@ -22,28 +27,23 @@ exports.addContact = async (req, res) => {
   try {
     const userId = req.userId;
     const contactsData = req.body;
-    const invalidContacts = contactsData.filter(
-      (contact) => !contact.name || !contact.phoneNumber
-    );
-    if (invalidContacts.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Name and phone number are required for all contacts."
-      });
-    }
 
-    const contacts = await Contact.bulkCreate(
-      contactsData.map((contact) => ({
-        name: contact.name,
-        phoneNumber: contact.phoneNumber,
-        email: contact.email,
-        userId: userId
-      }))
-    );
-    res.status(200).json({ message: "Contacts added successfully", contacts });
+    try {
+      const contacts = await Contact.bulkCreate(
+        contactsData.map((contact) => ({
+          name: contact.name,
+          phoneNumber: contact.phoneNumber,
+          email: contact.email,
+          userId: userId
+        }))
+      );
+
+      return sendSuccess(res, "Contacts added successfully", contacts);
+    } catch (error) {
+      return sendBadRequest(res, error.message);
+    }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendInternalError(res, "Internal server error");
   }
 };
 
@@ -51,41 +51,47 @@ exports.updateContact = async (req, res) => {
   try {
     const { contactId } = req.params;
     const { name, phoneNumber, email } = req.body;
+    try {
+      const contact = await Contact.findOne({
+        where: { id: contactId, userId: req.userId }
+      });
 
-    const contact = await Contact.findOne({
-      where: { id: contactId, userId: req.userId }
-    });
+      if (!contact) {
+        return sendNotFound(res, "Contact not found.");
+      }
 
-    if (!contact) {
-      return res.status(404).json({ message: "Contact not found." });
+      await contact.update({ name, phoneNumber, email });
+
+      return sendSuccess(res, "Update Successfully", contact);
+    } catch (error) {
+      return sendBadRequest(res, error.message);
     }
-
-    await contact.update({ name, phoneNumber, email });
-
-    res.status(200).json({ message: "Update Successfully", data: contact });
   } catch (error) {
     console.error("Error updating contact:", error);
-    res.status(500).json({ message: "Failed to update contact." });
+    return sendInternalError(res, "Internal server error");
   }
 };
 
 exports.deleteContactById = async (req, res) => {
   try {
     const { contactId } = req.params;
+    try {
+      const result = await Contact.destroy({
+        where: { id: contactId, userId: req.userId }
+      });
 
-    const result = await Contact.destroy({
-      where: { id: contactId, userId: req.userId }
-    });
+      if (result === 0) {
+        return sendNotFound(
+          res,
+          "Contact not found or not authorized to delete."
+        );
+      }
 
-    if (result === 0) {
-      return res
-        .status(404)
-        .json({ message: "Contact not found or not authorized to delete." });
+      return sendSuccess(res, "Delete Successfully");
+    } catch (error) {
+      return sendBadRequest(res, error.message);
     }
-
-    res.status(200).json({ success: true, message: "Delete Successfully" });
   } catch (error) {
-    console.error("Error deleting contact:", error);
-    res.status(500).json({ message: "Failed to delete contact." });
+    return sendInternalError(res, "Failed to delete contact.");
   }
 };

@@ -38,7 +38,10 @@ module.exports = (sequelize) => {
         validate: {
           notNull: { msg: "Phone number is required" },
           notEmpty: { msg: "Phone number must not be empty" },
-          isNumeric: { msg: "Phone number must contain only numbers" },
+          is: {
+            args: /^\+[1-9]{1}[0-9]{3,14}$/,
+            msg: "Please provide a valid phone number in international format."
+          }
         },
       },
       email: {
